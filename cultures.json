@@ -1,0 +1,58 @@
+{
+    "Generic": {
+        "titles": {
+            "ruler": "Ruler",
+            "heir": "Heir",
+            "noble": "Noble"
+        },
+        "units": {
+            "basic": "Warriors",
+            "elite": "Veterans"
+        }
+    },
+    "Roman": {
+        "titles": {
+            "ruler": "Rex",
+            "heir": "Princeps",
+            "noble": "Patrician"
+        },
+        "units": {
+            "basic": "Hastati",
+            "elite": "Triarii"
+        },
+        "mechanics": [
+            "Senate",
+            "Cursus Honorum"
+        ]
+    },
+    "Greek": {
+        "titles": {
+            "ruler": "Archon",
+            "heir": "Ephebe",
+            "noble": "Eupatrid"
+        },
+        "units": {
+            "basic": "Hoplites",
+            "elite": "Hippeis"
+        },
+        "mechanics": [
+            "Ostracism",
+            "Olympics"
+        ]
+    },
+    "Tribal": {
+        "titles": {
+            "ruler": "Chieftain",
+            "heir": "Tanist",
+            "noble": "Elder"
+        },
+        "units": {
+            "basic": "Warband",
+            "elite": "Oathsworn"
+        },
+        "mechanics": [
+            "Raiding",
+            "Personal Combat"
+        ]
+    }
+}

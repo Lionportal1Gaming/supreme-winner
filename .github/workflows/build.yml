@@ -1,0 +1,72 @@
+name: Build Executables
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: BloodLines
+          - os: windows-latest
+            platform: windows
+            artifact: BloodLines.exe
+          - os: macos-latest
+            platform: mac
+            artifact: BloodLines
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller rich
+    
+    - name: Build with PyInstaller
+      run: pyinstaller BloodLines.spec --clean
+    
+    - name: Copy documentation
+      shell: bash
+      run: |
+        cp README.md dist/
+        cp RELEASE_NOTES.md dist/
+    
+    - name: Create ZIP (non-Windows)
+      if: runner.os != 'Windows'
+      run: |
+        cd dist
+        zip -r ../ProjectAeterna-${{ matrix.platform }}.zip .
+    
+    - name: Create ZIP (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd dist
+        Compress-Archive -Path * -DestinationPath ../ProjectAeterna-${{ matrix.platform }}.zip
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: projectaeterna-${{ matrix.platform }}
+        path: ProjectAeterna-${{ matrix.platform }}.zip
+    
+    - name: Upload to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ProjectAeterna-${{ matrix.platform }}.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

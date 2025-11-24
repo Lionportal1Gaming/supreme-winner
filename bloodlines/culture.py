@@ -1,9 +1,20 @@
 import json
+import sys
+import os
 from typing import Dict, List, Optional
 
 class CultureManager:
     def __init__(self, config_path: str = "data/cultures.json"):
-        self.data = self._load_data(config_path)
+        self.data = self._load_data(self._resource_path(config_path))
+
+    def _resource_path(self, relative_path: str) -> str:
+        """Get absolute path to resource, works for dev and for PyInstaller"""
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
 
     def _load_data(self, path: str) -> Dict:
         try:

@@ -41,3 +41,8 @@ Thumbs.db
 # Test files
 verify_*.py
 test_*.py
+
+# Internal documentation (not for public repo)
+GITHUB_RELEASE.md
+ITCHIO_UPLOAD.md
+PACKAGING.md

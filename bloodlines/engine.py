@@ -5,6 +5,9 @@ from .events import EventManager, Event
 from .government import GovernmentManager
 from .world import WorldManager
 import random
+import json
+import gzip
+import os
 
 class GameEngine:
     def __init__(self):
@@ -26,6 +29,67 @@ class GameEngine:
         self.player_character_id: Optional[str] = None
         self.game_over = False
         self.logs: List[str] = []
+
+    def save_game(self, filename: str):
+        """Save the current game state to a compressed JSON file."""
+        if not filename.endswith(".sav"):
+            filename += ".sav"
+            
+        data = {
+            "version": "0.1.0",
+            "year": self.year,
+            "month": self.month,
+            "is_bc": self.is_bc,
+            "player_character_id": self.player_character_id,
+            "logs": self.logs,
+            "characters": {k: v.to_dict() for k, v in self.characters.items()},
+            "dynasties": {k: v.to_dict() for k, v in self.dynasties.items()},
+            "polities": {k: v.to_dict() for k, v in self.polities.items()},
+            "regions": {k: v.to_dict() for k, v in self.regions.items()}
+        }
+        
+        try:
+            with gzip.open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(data, f)
+            self.log(f"Game saved to {filename}")
+        except Exception as e:
+            self.log(f"Error saving game: {e}")
+
+    def load_game(self, filename: str) -> bool:
+        """Load game state from a compressed JSON file."""
+        if not filename.endswith(".sav"):
+            filename += ".sav"
+            
+        if not os.path.exists(filename):
+            self.log(f"Save file {filename} not found.")
+            return False
+            
+        try:
+            with gzip.open(filename, 'rt', encoding='utf-8') as f:
+                data = json.load(f)
+                
+            self.year = data["year"]
+            self.month = data["month"]
+            self.is_bc = data["is_bc"]
+            self.player_character_id = data["player_character_id"]
+            self.logs = data["logs"]
+            
+            # Reconstruct objects
+            self.characters = {k: Character.from_dict(v) for k, v in data["characters"].items()}
+            self.dynasties = {k: Dynasty.from_dict(v) for k, v in data["dynasties"].items()}
+            self.polities = {k: Polity.from_dict(v) for k, v in data["polities"].items()}
+            self.regions = {k: Region.from_dict(v) for k, v in data["regions"].items()}
+            
+            # Re-link managers
+            self.government_manager = GovernmentManager(self)
+            self.world_manager = WorldManager(self)
+            # Note: We don't need to reload static data like cultures/events as they are initialized in __init__
+            
+            self.log(f"Game loaded from {filename}")
+            return True
+        except Exception as e:
+            self.log(f"Error loading game: {e}")
+            return False
 
     def log(self, message: str):
         """Add a message to the game log."""
@@ -55,7 +119,151 @@ class GameEngine:
         self.process_characters()
         self.process_births()
         self.process_polities()
+        self.process_economy()
         self.process_events()
+
+    def construct_building(self, region_id: str, building_type: str) -> bool:
+        """Construct a building in a region."""
+        if region_id not in self.regions:
+            return False
+            
+        region = self.regions[region_id]
+        player = self.characters[self.player_character_id]
+        
+        # Costs and Effects
+        costs = {
+            "farm": 50,
+            "estate": 200
+        }
+        
+        if building_type not in costs:
+            return False
+            
+        cost = costs[building_type]
+        
+        if player.wealth >= cost:
+            self.modify_wealth(player.id, -cost)
+            if building_type in region.buildings:
+                region.buildings[building_type] += 1
+            else:
+                region.buildings[building_type] = 1
+            self.log(f"Constructed {building_type} in {region.name}.")
+            return True
+        else:
+            self.log(f"Not enough wealth to build {building_type} (Cost: {cost}).")
+            return False
+
+    def process_economy(self):
+        """Process monthly income from buildings."""
+        # Building Income
+        income_map = {
+            "farm": 1,
+            "estate": 5
+        }
+        
+        for region in self.regions.values():
+            # Find owner of region (Polity -> Ruler)
+            if region.owner_polity_id:
+                polity = self.polities[region.owner_polity_id]
+                if polity.ruler_id:
+                    ruler_id = polity.ruler_id
+                    
+                    total_income = 0
+                    for b_type, count in region.buildings.items():
+                        if b_type in income_map:
+                            total_income += income_map[b_type] * count
+                    
+                    if total_income > 0:
+                        self.modify_wealth(ruler_id, total_income)
+
+    def get_opinion(self, char1_id: str, char2_id: str) -> int:
+        """Get char1's opinion of char2."""
+        if char1_id not in self.characters or char2_id not in self.characters:
+            return 0
+        return self.characters[char1_id].opinions.get(char2_id, 0)
+
+    def modify_opinion(self, char1_id: str, char2_id: str, change: int):
+        """Modify char1's opinion of char2 by change amount."""
+        if char1_id not in self.characters or char2_id not in self.characters:
+            return
+        
+        char1 = self.characters[char1_id]
+        current = char1.opinions.get(char2_id, 0)
+        new_opinion = max(-100, min(100, current + change))
+        char1.opinions[char2_id] = new_opinion
+        
+        if change != 0:
+            char2_name = self.characters[char2_id].name
+            self.log(f"{char1.name} opinion of {char2_name}: {change:+d} (now {new_opinion})")
+
+    def arrange_marriage(self, char1_id: str, char2_id: str) -> bool:
+        """Arrange marriage between two characters."""
+        if char1_id not in self.characters or char2_id not in self.characters:
+            return False
+        
+        char1 = self.characters[char1_id]
+        char2 = self.characters[char2_id]
+        
+        # Check requirements
+        if not char1.is_alive or not char2.is_alive:
+            self.log("Both characters must be alive to marry.")
+            return False
+        
+        if char1.gender == char2.gender:
+            self.log("Marriage requires opposite genders.")
+            return False
+        
+        if char1.spouse_id or char2.spouse_id:
+            self.log("One or both characters are already married.")
+            return False
+        
+        if self.get_opinion(char1_id, char2_id) < 0 or self.get_opinion(char2_id, char1_id) < 0:
+            self.log("Marriage requires positive opinion between both parties.")
+            return False
+        
+        # Perform marriage
+        char1.spouse_id = char2_id
+        char2.spouse_id = char1_id
+        
+        # Opinion boost
+        self.modify_opinion(char1_id, char2_id, 25)
+        self.modify_opinion(char2_id, char1_id, 25)
+        
+        self.log(f"{char1.name} and {char2.name} have married!")
+        return True
+
+    def get_family_tree(self, char_id: str) -> Dict:
+        """Get structured family tree data for a character."""
+        if char_id not in self.characters:
+            return {}
+        
+        char = self.characters[char_id]
+        tree = {
+            "character": char,
+            "father": self.characters.get(char.father_id) if char.father_id else None,
+            "mother": self.characters.get(char.mother_id) if char.mother_id else None,
+            "spouse": self.characters.get(char.spouse_id) if char.spouse_id else None,
+            "children": [],
+            "siblings": []
+        }
+        
+        # Get children
+        for cid, c in self.characters.items():
+            if c.father_id == char_id or c.mother_id == char_id:
+                tree["children"].append(c)
+        
+        # Get siblings (same parents)
+        if char.father_id or char.mother_id:
+            for cid, c in self.characters.items():
+                if cid != char_id and (
+                    (char.father_id and c.father_id == char.father_id) or
+                    (char.mother_id and c.mother_id == char.mother_id)
+                ):
+                    tree["siblings"].append(c)
+        
+        return tree
+
+
 
     def process_polities(self):
         for polity in self.polities.values():
@@ -265,5 +473,6 @@ class GameEngine:
         # Create Polity
         rome = Polity(name="Roman Kingdom", government_type=GovernmentType.MONARCHY, ruler_id=player.id)
         self.polities[rome.id] = rome
+        self.regions[latium_id].owner_polity_id = rome.id
         
         self.log("Welcome to Project Aeterna. The year is 753 BC.")

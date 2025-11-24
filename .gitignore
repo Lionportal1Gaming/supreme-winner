@@ -1,34 +1,43 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
-venv/
-.env
-
-# Build
 build/
+develop-eggs/
 dist/
-*.spec
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Save files
+*.save
+*.sav
+savegame*
 
 # IDE
 .vscode/
 .idea/
 *.swp
+*.swo
 
-# Archives
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution
 *.zip
 
-# Tools
-tools/
+# Test files
+verify_*.py
+test_*.py

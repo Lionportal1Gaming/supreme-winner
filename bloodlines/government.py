@@ -1,4 +1,4 @@
-from models import Polity, GovernmentType, Character
+from .models import Polity, GovernmentType, Character
 import random
 
 class GovernmentManager:

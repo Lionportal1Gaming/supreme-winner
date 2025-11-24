@@ -1,5 +1,5 @@
-from engine import GameEngine
-from events import EventManager
+from bloodlines.engine import GameEngine
+from bloodlines.events import EventManager
 
 def test_events():
     print("Initializing Engine...")

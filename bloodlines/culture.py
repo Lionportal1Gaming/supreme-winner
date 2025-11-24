@@ -2,7 +2,7 @@ import json
 from typing import Dict, List, Optional
 
 class CultureManager:
-    def __init__(self, config_path: str = "cultures.json"):
+    def __init__(self, config_path: str = "data/cultures.json"):
         self.data = self._load_data(config_path)
 
     def _load_data(self, path: str) -> Dict:

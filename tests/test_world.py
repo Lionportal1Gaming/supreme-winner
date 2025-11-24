@@ -1,5 +1,5 @@
-from engine import GameEngine
-from models import Character
+from bloodlines.engine import GameEngine
+from bloodlines.models import Character
 
 def test_world():
     print("Initializing Engine...")

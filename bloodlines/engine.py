@@ -1,9 +1,9 @@
 from typing import List, Dict, Optional
-from models import Character, Dynasty, Polity, Region, GovernmentType, Terrain
-from culture import CultureManager
-from events import EventManager, Event
-from government import GovernmentManager
-from world import WorldManager
+from .models import Character, Dynasty, Polity, Region, GovernmentType, Terrain
+from .culture import CultureManager
+from .events import EventManager, Event
+from .government import GovernmentManager
+from .world import WorldManager
 import random
 
 class GameEngine:

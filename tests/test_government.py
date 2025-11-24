@@ -1,5 +1,5 @@
-from engine import GameEngine
-from models import Polity, GovernmentType, Character
+from bloodlines.engine import GameEngine
+from bloodlines.models import Polity, GovernmentType, Character
 
 def test_government():
     print("Initializing Engine...")

@@ -1,4 +1,4 @@
-from models import Region, Terrain, Polity, GovernmentType
+from .models import Region, Terrain, Polity, GovernmentType
 from typing import Dict, List, Optional
 import random
 

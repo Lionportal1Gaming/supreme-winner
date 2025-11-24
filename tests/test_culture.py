@@ -1,5 +1,5 @@
-from engine import GameEngine
-from models import Character
+from bloodlines.engine import GameEngine
+from bloodlines.models import Character
 
 def test_culture():
     print("Initializing Engine...")
@@ -11,7 +11,7 @@ def test_culture():
     engine.characters[roman_char.id] = roman_char
     
     # Mock him as ruler
-    from models import Polity, GovernmentType
+    from bloodlines.models import Polity, GovernmentType
     rome = Polity(name="Rome", government_type=GovernmentType.MONARCHY, ruler_id=roman_char.id)
     engine.polities[rome.id] = rome
     

@@ -1,4 +1,4 @@
-from engine import GameEngine
+from bloodlines.engine import GameEngine
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
